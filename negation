@@ -1,0 +1,75 @@
+import re
+import os
+import numpy as np
+
+path = 'C:\cygwin64\home\Dell'
+negation_word = set(["no", "not", "rather", "couldn't", "wasn't", "didn't", "wouldn't", "shouldn't", "weren't", "don't", "doesn't", "haven't", "hasn't",
+"won't", "wont", "hadn't", "never", "none", "nobody", "nothing", "neither", "nor", "nowhere", "isn’t", "can’t", "cannot",
+"mustn't", "mightn't", "shan't", "without", "needn't" ])
+
+def shuffle(X, y):
+    perm = np.random.permutation(len(X))
+    X = X[perm]
+    y = y[perm]
+    return X, y
+def load_imdb_dataset(path):
+    imdb_path = os.path.join(path, 'aclImdb')
+
+    # Load the dataset
+    train_texts = []
+    train_labels = []
+    test_texts = []
+    test_labels = []
+    for dset in ['train', 'test']:
+        for cat in ['pos', 'neg']:
+            dset_path = os.path.join(imdb_path, dset, cat)
+            for fname in sorted(os.listdir(dset_path)):
+                if fname.endswith('.txt'):
+                    with open(os.path.join(dset_path, fname), encoding="utf8") as f:
+                        if dset == 'train':
+                            train_texts.append(f.read())
+                        else:
+                            test_texts.append(f.read())
+                    label = 0 if cat == 'neg' else 1
+                    if dset == 'train':
+                        train_labels.append(label)
+                    else:
+                        test_labels.append(label)
+
+    # Converting to np.array
+    train_texts = np.array(train_texts)
+    train_labels = np.array(train_labels)
+    test_texts = np.array(test_texts)
+    test_labels = np.array(test_labels)
+
+    # Shuffle the dataset
+    train_texts, train_labels = shuffle(train_texts, train_labels)
+    test_texts, test_labels = shuffle(test_texts, test_labels)
+
+    # Return the dataset
+    return train_texts, train_labels, test_texts, test_labels
+
+def negation(text):
+    review_list = []
+    for review in text:
+        sentence_list = re.split('[,.?!:;]', review)
+        sentence_new = []
+        for sentence in sentence_list:
+            flag = False
+            word_list = sentence.split()
+            for i, word in enumerate(word_list):
+                if flag:
+                    word_list[i] = "not_" + word
+                if word in negation_word:
+                     flag = True
+            sentence_item = " ".join(word_list)
+            sentence_new.append(sentence_item)
+        review_item = " ".join(sentence_new)
+        review_list.append(review_item)
+    return review_list
+
+trX, trY, ttX, ttY = load_imdb_dataset(path)
+x = negation(trX)
+for i, item in enumerate(x):
+    if(i < 15):
+        print(item)
